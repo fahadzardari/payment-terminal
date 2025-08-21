@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Payment Page</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background-color: #f8f9fa;
+        font-family: "Inter", sans-serif;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+        font-family: "Inter", sans-serif;
+      }
+      .payment-container {
+        max-width: 700px;
+        margin-block: 50px;
+        margin-inline: 40px;
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 6px 6px #d2d2d2;
+        padding-inline: 0px;
+      }
+      .brand-logo {
+        max-height: auto;
+        width: auto;
+        margin-top: 70px;
+        margin-bottom: 55px;
+      }
+      .payment-header {
+        /* border-radius: 8px 8px 0 0; */
+        border-bottom: 1px solid rgba(210, 210, 210, 1);
+        color: white; /* White text for all content in header */
+      }
+      .payment-header h1 {
+        color: white;
+      }
+      .payment-header p.text-muted {
+        color: rgba(
+          255,
+          255,
+          255,
+          0.8
+        ) !important; /* Lighter white for description */
+      }
+      .payment-details {
+        margin-bottom: 30px;
+        padding-inline: 40px;
+        padding-top: 10px;
+        font-size: 14px;
+      }
+      .payment-details hr {
+        margin: 10px 0 18px 0;
+        border: none;
+        border-top: 1px solid #e0e0e0;
+      }
+      .payment-details-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 0;
+        gap: 10px;
+      }
+      .payment-details-row .left {
+        color: #898989;
+        font-weight: 500;
+      }
+      .payment-details-row .right {
+        color: #898989;
+        font-weight: 500;
+        text-align: right;
+      }
+      .payment-details-row .bold {
+        color: black;
+      }
+
+      .payment-details-row.reference-row {
+        padding-block: 20px;
+      }
+
+      .payment-details-row.customer-service-row {
+        border-top: 1px solid #d2d2d2;
+        padding-block: 20px;
+      }
+      .payment-desc-table {
+        width: 100%;
+        margin-top: 40px;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+      .payment-desc-table th,
+      .payment-desc-table td {
+        padding: 0 0 8px 0;
+      }
+      .payment-desc-table th {
+        border-bottom: 1px solid #d2d2d2;
+        border-top: 1px solid #d2d2d2;
+        padding-block: 10px;
+        text-align: left;
+      }
+      .payment-desc-table th.amount-header,
+      .payment-desc-table td.amount-cell {
+        text-align: right;
+      }
+      .payment-desc-table td {
+        border: none;
+        padding-top: 10px;
+      }
+      .payment-desc-table td.amount-cell {
+        font-weight: 600;
+        color: #000000;
+      }
+
+      .payment-actions {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding-inline: 50px;
+        padding-bottom: 30px;
+        gap: 40px;
+        min-height: 200px;
+      }
+      .amount {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #212529;
+      }
+      .btn-pay {
+        padding: 12px 30px;
+        font-size: 1.1rem;
+        background-color: #0070ba;
+        border-color: #0070ba;
+      }
+      .btn-pay:hover {
+        background-color: #005ea6;
+        border-color: #005ea6;
+      }
+      #payment-expiry-text {
+        font-size: 14px;
+        color: #696969;
+        /* margin-top: 40px; */
+        font-weight: medium;
+      }
+      .title-span {
+        color: #898989;
+        font-size: 14px;
+        font-weight: 600;
+      }
+    </style>
+    <script>
+      // Fetch PayPal config first
+      (async function () {
+        try {
+          const response = await fetch("/api/paypal-config");
+          const { clientId } = await response.json();
+
+          // Then load the PayPal SDK with the right client ID and disable options
+          const script = document.createElement("script");
+          script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&disable-funding=paylater,credit`;
+          script.async = true;
+          document.head.appendChild(script);
+        } catch (error) {
+          console.error("Failed to load PayPal configuration:", error);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div class="container payment-container">
+      <div class="payment-header text-center">
+        <img
+          id="brand-logo"
+          class="brand-logo"
+          src="/brand-logos/nixxon-publisher.png"
+          alt="Brand Logo"
+        />
+      </div>
+
+      <div class="payment-details">
+        <div class="payment-details-row reference-row">
+          <div class="left">
+            <span class="title-span">Reference:</span>
+            <span class="bold" id="reference-id"></span>
+          </div>
+        </div>
+        <div class="payment-details-row customer-service-row">
+          <div class="left">
+            <span class="title-span">Customer:</span>
+            <span class="bold" id="customer-name"></span>
+          </div>
+          <div class="right">
+            <span class="title-span">Service:</span>
+            <span class="bold" id="service-name"></span>
+          </div>
+        </div>
+        <table class="payment-desc-table">
+          <thead>
+            <tr>
+              <th class="title-span">Description</th>
+              <th class="amount-header title-span">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr id="service-description-row">
+              <td
+                style="font-weight: 600; font-size: 16px"
+                id="service-description"
+              ></td>
+              <td class="amount-cell" style="font-size: 16px">
+                <span id="amount"></span> <span id="currency"></span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="payment-actions text-center">
+        <div id="paypal-button-container"></div>
+        <p class="" id="payment-expiry-text">
+          This payment link will expire in 24 hours
+        </p>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        // Extract reference ID from URL
+        const urlParts = window.location.pathname.split("/");
+        const referenceId = urlParts[urlParts.length - 1];
+
+        try {
+          // Fetch payment details
+          const response = await fetch(`/api/payments/${referenceId}`);
+
+          if (!response.ok) {
+            throw new Error("Payment not found");
+          }
+
+          const { data } = await response.json();
+
+          // Check payment status first
+          if (data.status === "completed") {
+            // Show completed payment message
+            document.querySelector(".payment-container").innerHTML = `
+                        <div class="text-center">
+                            <h3 class="text-success">Payment Already Completed</h3>
+                            <p>This payment has already been processed successfully.</p>
+                            <p>Reference ID: ${data.referenceId}</p>
+                            <p>Amount: ${parseFloat(data.amount).toFixed(2)} ${
+              data.currency
+            }</p>
+                            <p>Thank you for your business!</p>
+                        </div>
+                    `;
+            return;
+          } else if (data.status === "cancelled") {
+            // Show cancelled payment message
+            document.querySelector(".payment-container").innerHTML = `
+                        <div class="text-center">
+                            <h3 class="text-warning">Payment Cancelled</h3>
+                            <p>This payment has been cancelled.</p>
+                            <p>If you believe this is an error, please contact support.</p>
+                        </div>
+                    `;
+            return;
+          } else if (data.status === "failed") {
+            // Show failed payment message
+            document.querySelector(".payment-container").innerHTML = `
+                        <div class="text-center">
+                            <h3 class="text-danger">Payment Failed</h3>
+                            <p>The previous payment attempt failed.</p>
+                            <p>You may try again or contact support.</p>
+                            <button id="retry-button" class="btn btn-primary mt-3">Try Again</button>
+                        </div>
+                    `;
+
+            // Add event listener for retry button
+            document
+              .getElementById("retry-button")
+              .addEventListener("click", () => {
+                window.location.reload();
+              });
+            return;
+          }
+
+          // Continue with your existing code for pending/processing payments
+          // Populate page with payment details
+          document.getElementById("reference-id").textContent =
+            data.referenceId;
+          document.getElementById("customer-name").textContent =
+            data.customerName;
+          document.getElementById("service-name").textContent =
+            data.serviceName;
+
+          if (data.serviceDescription) {
+            document.getElementById("service-description").textContent =
+              data.serviceDescription;
+          } else {
+            document.getElementById("service-description").textContent =
+              data.serviceName || "";
+          }
+
+          document.getElementById("amount").textContent = parseFloat(
+            data.amount
+          ).toFixed(2);
+          document.getElementById("currency").textContent = data.currency;
+
+          if (data.brand.logoUrl) {
+            document.getElementById("brand-logo").src = data.brand.logoUrl;
+            console.log("Brand logo URL:", data.brand.logoUrl);
+          } else {
+            document.getElementById("brand-logo").style.display = "none";
+          }
+
+          // After setting the logo src:
+          const logo = document.getElementById("brand-logo");
+          logo.onload = function () {
+            if (logo.naturalHeight > 100) {
+              logo.style.marginTop = "30px";
+              logo.style.marginBottom = "30px";
+            } else {
+              logo.style.marginTop = "70px";
+              logo.style.marginBottom = "55px";
+            }
+          };
+          // If the logo is already loaded (cache), trigger onload manually
+          if (logo.complete) logo.onload();
+
+          // After populating payment details, render PayPal Buttons
+          const paypalConfigResponse = await fetch("/api/paypal-config");
+          const { clientId } = await paypalConfigResponse.json();
+
+          // Load PayPal SDK with card and venmo funding sources enabled
+          const script = document.createElement("script");
+          script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=${data.currency}&intent=capture&components=buttons,funding-eligibility&enable-funding=venmo,card,paypal&disable-funding=paylater,credit`;
+          script.onload = renderPayPalButtons;
+          document.head.appendChild(script);
+
+          function renderPayPalButtons() {
+            if (!window.paypal) return;
+            paypal
+              .Buttons({
+                style: {
+                  layout: "vertical",
+                  color: "blue",
+                  shape: "rect",
+                  label: "paypal",
+                },
+                createOrder: async () => {
+                  // Call your backend to create a PayPal order and return the order ID
+                  const res = await fetch(
+                    `/api/payments/${data.referenceId}/paypal`,
+                    { method: "POST" }
+                  );
+                  const { data: orderData } = await res.json();
+                  return orderData.orderId;
+                },
+                onApprove: async (data, actions) => {
+                  // Optionally capture on the client, or redirect to a success page
+                  console.log("Payment approved:", data);
+                  window.location.href = `/payment/success/${referenceId}`;
+                },
+                onCancel: () => {
+                  // window.location.href = `/payment/cancel/${data.referenceId}`;
+                  console.error("Payment cancelled by user:");
+                },
+                onError: (err) => {
+                  alert("Payment failed: " + err);
+                },
+              })
+              .render("#paypal-button-container");
+          }
+        } catch (error) {
+          console.error("Error loading payment details:", error);
+          document.querySelector(".payment-container").innerHTML = `
+                    <div class="text-center">
+                        <h3>Payment Not Found</h3>
+                        <p>The payment link you're trying to access is invalid or has expired.</p>
+                    </div>
+                `;
+        }
+      });
+    </script>
+  </body>
+</html>

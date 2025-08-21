@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Requests - Agent Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-bottom: 40px;
+        }
+        .requests-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        .page-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .table th {
+            background-color: #f8f9fa;
+        }
+        .badge-new {
+            background-color: #3498db;
+        }
+        .badge-contacted {
+            background-color: #f1c40f;
+        }
+        .badge-closed {
+            background-color: #2ecc71;
+        }
+        .filters-container {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        .loading-spinner {
+            text-align: center;
+            margin: 40px 0;
+        }
+        .empty-state {
+            text-align: center;
+            margin: 40px 0;
+            color: #6c757d;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+      <div class="container">
+        <a class="navbar-brand" href="/agent/payments">Payment Terminal</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="/agent/payments">Payments</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/agent/create-link">Create Payment</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/agent/brands">Brands</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link active" href="/agent/contact-requests">Contact Requests</a>
+            </li>
+          </ul>
+          <div class="d-flex">
+            <button onclick="logout()" class="btn btn-outline-light">Logout</button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container">
+        <div class="requests-container">
+            <div class="page-header">
+                <h2>Contact Requests</h2>
+                <p class="text-muted">View and manage contact requests from all brands</p>
+                <div class="mt-3">
+                    <button id="refresh-btn" class="btn btn-outline-secondary">Refresh List</button>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-container">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="brand-filter" class="form-label">Filter by Brand</label>
+                        <select id="brand-filter" class="form-select">
+                            <option value="">All Brands</option>
+                            <!-- Brand options will be loaded dynamically -->
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="status-filter" class="form-label">Filter by Status</label>
+                        <select id="status-filter" class="form-select">
+                            <option value="">All Statuses</option>
+                            <option value="new">New</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button id="apply-filters-btn" class="btn btn-primary w-100">Apply Filters</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="loading-spinner" class="loading-spinner">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading contact requests...</p>
+            </div>
+
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-inbox" viewBox="0 0 16 16">
+                    <path d="M4.98 4a.5.5 0 0 0-.39.188L1.54 8H6a.5.5 0 0 1 .5.5 1.5 1.5 0 1 0 3 0A.5.5 0 0 1 10 8h4.46l-3.05-3.812A.5.5 0 0 0 11.02 4H4.98zm-1.17-.437A1.5 1.5 0 0 1 4.98 3h6.04a1.5 1.5 0 0 1 1.17.563l3.7 4.625a.5.5 0 0 1 .106.374l-.39 3.124A1.5 1.5 0 0 1 14.117 13H1.883a1.5 1.5 0 0 1-1.489-1.314l-.39-3.124a.5.5 0 0 1 .106-.374l3.7-4.625z"/>
+                </svg>
+                <h5 class="mt-3">No contact requests found</h5>
+                <p>There are no contact requests matching your filters</p>
+            </div>
+
+            <div id="requests-table-container" class="table-responsive" style="display: none;">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Brand</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requests-table-body">
+                        <!-- Content will be loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination-container" class="pagination-container" style="display: none;">
+                <nav aria-label="Contact requests pagination">
+                    <ul id="pagination" class="pagination">
+                        <!-- Pagination will be generated dynamically -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Contact Request Details -->
+    <div class="modal fade" id="requestDetailsModal" tabindex="-1" aria-labelledby="requestDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="requestDetailsModalLabel">Contact Request Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="modal-body-content">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <div class="status-buttons">
+                        <!-- Status buttons will be added dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auth helper functions
+        function getToken() {
+          return localStorage.getItem("token");
+        }
+
+        function checkAuth() {
+          const token = getToken();
+          if (!token) {
+            window.location.href = "/login";
+            return false;
+          }
+          return true;
+        }
+
+        // Replace all fetch calls with this helper
+        async function fetchWithAuth(url, options = {}) {
+          if (!checkAuth()) return;
+
+          const token = getToken();
+
+          const headers = {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            ...options.headers
+          };
+
+          return fetch(url, {
+            ...options,
+            headers
+          });
+        }
+
+        // Add logout functionality
+        function logout() {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.href = "/login";
+        }
+
+        // Global variables
+        let contactRequests = [];
+        let brands = [];
+        let currentPage = 1;
+        let totalPages = 1;
+        let pageLimit = 10;
+        let modal;
+        let currentFilters = {
+            brandId: '',
+            status: ''
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication first
+            if (!checkAuth()) return;
+            
+            // Initialize Bootstrap modal
+            modal = new bootstrap.Modal(document.getElementById('requestDetailsModal'));
+            
+            // Load brands for filter dropdown
+            loadBrands();
+            
+            // Load contact requests when page loads
+            loadContactRequests();
+            
+            // Set up event listeners
+            document.getElementById('refresh-btn').addEventListener('click', loadContactRequests);
+            document.getElementById('apply-filters-btn').addEventListener('click', applyFilters);
+            
+            // Status filter change
+            document.getElementById('status-filter').addEventListener('change', function() {
+                currentFilters.status = this.value;
+            });
+            
+            // Brand filter change
+            document.getElementById('brand-filter').addEventListener('change', function() {
+                currentFilters.brandId = this.value;
+            });
+        });
+        
+        // Load brands from API
+        async function loadBrands() {
+            try {
+                const response = await fetchWithAuth('/api/brands');
+                if (!response.ok) {
+                    throw new Error('Failed to load brands');
+                }
+                
+                const { data } = await response.json();
+                brands = data;
+                
+                // Populate brand dropdown
+                const brandSelect = document.getElementById('brand-filter');
+                brands.forEach(brand => {
+                    const option = document.createElement('option');
+                    option.value = brand.id;
+                    option.textContent = brand.name;
+                    brandSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading brands:', error);
+            }
+        }
+        
+        // Apply filters
+        function applyFilters() {
+            currentPage = 1; // Reset to first page when applying filters
+            loadContactRequests();
+        }
+        
+        // Load contact requests from API
+        async function loadContactRequests() {
+            showLoading(true);
+            
+            try {
+                // Build query parameters
+                const params = new URLSearchParams();
+                if (currentFilters.brandId) params.append('brandId', currentFilters.brandId);
+                if (currentFilters.status) params.append('status', currentFilters.status);
+                params.append('page', currentPage);
+                params.append('limit', pageLimit);
+                
+                const url = `/api/contact-requests?${params.toString()}`;
+                const response = await fetchWithAuth(url);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load contact requests');
+                }
+                
+                const { data, pagination } = await response.json();
+                contactRequests = data;
+                
+                // Update pagination
+                totalPages = pagination.pages;
+                
+                if (contactRequests.length === 0) {
+                    showEmptyState(true);
+                } else {
+                    renderContactRequests(contactRequests);
+                    renderPagination(pagination);
+                    showEmptyState(false);
+                }
+            } catch (error) {
+                console.error('Error loading contact requests:', error);
+                alert('Failed to load contact requests. Please try again.');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Render contact requests
+        function renderContactRequests(requests) {
+            const tableBody = document.getElementById('requests-table-body');
+            tableBody.innerHTML = '';
+            
+            requests.forEach(request => {
+                const row = document.createElement('tr');
+                
+                // Format date
+                const createdDate = new Date(request.createdAt);
+                const formattedDate = createdDate.toLocaleDateString() + ' ' + 
+                                      createdDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                row.innerHTML = `
+                    <td>${request.id}</td>
+                    <td>${request.name}</td>
+                    <td>${request.email}</td>
+                    <td>${request.phone}</td>
+                    <td>${request.brand.name}</td>
+                    <td><span class="badge bg-${getStatusColor(request.status)}">${request.status || 'new'}</span></td>
+                    <td>${formattedDate}</td>
+                    <td class="action-buttons">
+                        <button class="btn btn-sm btn-outline-primary view-details" data-id="${request.id}">
+                            Details
+                        </button>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            // Add event listeners to view details buttons
+            document.querySelectorAll('.view-details').forEach(button => {
+                button.addEventListener('click', function() {
+                    const requestId = this.getAttribute('data-id');
+                    showRequestDetails(requestId);
+                });
+            });
+            
+            document.getElementById('requests-table-container').style.display = 'block';
+        }
+        
+        // Render pagination
+        function renderPagination(pagination) {
+            const paginationElement = document.getElementById('pagination');
+            paginationElement.innerHTML = '';
+            
+            // Previous button
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" data-page="${currentPage - 1}">&laquo; Previous</a>`;
+            paginationElement.appendChild(prevLi);
+            
+            // Page numbers
+            for (let i = 1; i <= pagination.pages; i++) {
+                const pageLi = document.createElement('li');
+                pageLi.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                pageLi.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+                paginationElement.appendChild(pageLi);
+            }
+            
+            // Next button
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === pagination.pages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" data-page="${currentPage + 1}">Next &raquo;</a>`;
+            paginationElement.appendChild(nextLi);
+            
+            // Add event listeners to pagination links
+            document.querySelectorAll('.page-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const newPage = parseInt(this.getAttribute('data-page'));
+                    if (newPage !== currentPage && newPage > 0 && newPage <= pagination.pages) {
+                        currentPage = newPage;
+                        loadContactRequests();
+                    }
+                });
+            });
+            
+            document.getElementById('pagination-container').style.display = 'block';
+        }
+        
+        // Show contact request details
+        async function showRequestDetails(id) {
+            try {
+                const response = await fetchWithAuth(`/api/contact-requests/${id}`);
+                if (!response.ok) {
+                    throw new Error('Failed to load contact request details');
+                }
+                
+                const { data: request } = await response.json();
+                
+                const createdDate = new Date(request.createdAt);
+                const formattedDate = createdDate.toLocaleDateString() + ' ' + 
+                                      createdDate.toLocaleTimeString();
+                
+                const modalContent = document.getElementById('modal-body-content');
+                
+                // Build fields dynamically based on what's available
+                let additionalFields = '';
+                
+                if (request.country) {
+                    additionalFields += `
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <h6>Country</h6>
+                                <p>${request.country}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (request.budget) {
+                    additionalFields += `
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <h6>Budget</h6>
+                                <p>${request.budget}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (request.services) {
+                    additionalFields += `
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <h6>Services</h6>
+                                <p>${request.services}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (request.timeline) {
+                    additionalFields += `
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <h6>Timeline</h6>
+                                <p>${request.timeline}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                modalContent.innerHTML = `
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6>Request ID</h6>
+                            <p>${request.id}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Status</h6>
+                            <p><span class="badge bg-${getStatusColor(request.status)}">${request.status || 'new'}</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6>Name</h6>
+                            <p>${request.name}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Brand</h6>
+                            <p>${request.brand.name}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6>Email</h6>
+                            <p><a href="mailto:${request.email}">${request.email}</a></p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Phone</h6>
+                            <p><a href="tel:${request.phone}">${request.phone}</a></p>
+                        </div>
+                    </div>
+                    
+                    ${additionalFields}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <h6>Message</h6>
+                            <div class="p-3 bg-light rounded">${request.message.replace(/\n/g, '<br>')}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <h6>Date Received</h6>
+                            <p>${formattedDate}</p>
+                        </div>
+                    </div>
+                `;
+                
+                // Add status update buttons
+                const statusButtons = document.querySelector('.status-buttons');
+                statusButtons.innerHTML = '';
+                
+                if (request.status !== 'new') {
+                    const newBtn = document.createElement('button');
+                    newBtn.className = 'btn btn-outline-primary ms-2';
+                    newBtn.textContent = 'Mark as New';
+                    newBtn.addEventListener('click', () => updateStatus(request.id, 'new'));
+                    statusButtons.appendChild(newBtn);
+                }
+                
+                if (request.status !== 'contacted') {
+                    const contactedBtn = document.createElement('button');
+                    contactedBtn.className = 'btn btn-outline-warning ms-2';
+                    contactedBtn.textContent = 'Mark as Contacted';
+                    contactedBtn.addEventListener('click', () => updateStatus(request.id, 'contacted'));
+                    statusButtons.appendChild(contactedBtn);
+                }
+                
+                if (request.status !== 'closed') {
+                    const closedBtn = document.createElement('button');
+                    closedBtn.className = 'btn btn-outline-success ms-2';
+                    closedBtn.textContent = 'Mark as Closed';
+                    closedBtn.addEventListener('click', () => updateStatus(request.id, 'closed'));
+                    statusButtons.appendChild(closedBtn);
+                }
+                
+                // Show modal
+                modal.show();
+            } catch (error) {
+                console.error('Error loading request details:', error);
+                alert('Failed to load contact request details');
+            }
+        }
+        
+        // Update contact request status
+        async function updateStatus(id, status) {
+            try {
+                const response = await fetchWithAuth(`/api/contact-requests/${id}/status`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ status })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to update status');
+                }
+                
+                // Refresh data and modal
+                loadContactRequests();
+                modal.hide();
+                
+            } catch (error) {
+                console.error('Error updating status:', error);
+                alert('Failed to update the status');
+            }
+        }
+        
+        // Helper functions
+        function getStatusColor(status) {
+            switch(status) {
+                case 'new': return 'primary';
+                case 'contacted': return 'warning';
+                case 'closed': return 'success';
+                default: return 'primary'; // Default to new
+            }
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loading-spinner').style.display = show ? 'block' : 'none';
+        }
+        
+        function showEmptyState(show) {
+            document.getElementById('empty-state').style.display = show ? 'block' : 'none';
+            document.getElementById('requests-table-container').style.display = show ? 'none' : 'block';
+            document.getElementById('pagination-container').style.display = show ? 'none' : 'block';
+        }
+    </script>
+</body>
+</html>

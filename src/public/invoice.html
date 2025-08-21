@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Invoice</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Global Styles */
+      @media print {
+        html,
+        body {
+          height: auto !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: visible !important;
+        }
+        body {
+          margin: 0;
+          padding: 0;
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        .no-print {
+          display: none;
+        }
+        @page {
+          size: A4;
+          margin: 0.5in;
+        }
+        .header {
+          /* Remove background-color override to keep it white as on screen */
+          /* background-color: #1e3a8a !important; */
+          border-bottom: 1px solid black !important;
+          position: relative;
+          padding: 30px !important;
+        }
+        .logo {
+          display: block !important;
+          max-width: 150px !important;
+          height: auto !important;
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        .brand-details {
+          text-align: right !important;
+          position: absolute !important;
+          top: 30px !important;
+          right: 30px !important;
+        }
+        .brand-name {
+          font-size: 24px !important;
+          color: #2d3748 !important; /* match on-screen color */
+        }
+        .brand-email {
+          font-size: 14px !important;
+          color: #2d3748 !important; /* match on-screen color */
+        }
+        /* Remove any forced white text for brand name/email */
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        color: #2d3748;
+        line-height: 1.5;
+        background-color: #f8fafc;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding-block: 20px;
+        background-color: white;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin-top: 20px;
+        margin-bottom: 20px;
+      }
+
+      /* Header Styles - Dark version */
+      .header {
+        /* background-color: #1e3a8a; Dark blue background */
+        padding: 30px;
+        position: relative;
+        border-bottom: 1px solid black;
+      }
+
+      .logo {
+        max-width: 150px;
+        height: auto;
+        display: block;
+      }
+
+      .brand-details {
+        text-align: right;
+        position: absolute;
+        top: 30px;
+        right: 30px;
+      }
+
+      .brand-name {
+        font-size: 24px;
+        /* color: #ffffff; White text */
+      }
+
+      .brand-email {
+        font-size: 14px;
+        /* color: #ffffff; White text */
+      }
+
+      /* Invoice Content Styles */
+      .invoice-content {
+        padding: 30px;
+      }
+
+      .invoice-title {
+        font-size: 28px;
+        margin-bottom: 20px;
+        color: #2d3748;
+      }
+
+      .invoice-details {
+        margin-bottom: 30px;
+      }
+
+      .invoice-details p {
+        margin-bottom: 5px;
+      }
+
+      .section-title {
+        color: #4361ee;
+        margin-bottom: 10px;
+        font-size: 16px;
+      }
+
+      .bill-to {
+        margin-bottom: 30px;
+      }
+
+      .bill-to p {
+        margin-bottom: 3px;
+      }
+
+      /* Service Table Styles - with print compatibility */
+      .service-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 30px;
+        border: 1px solid #e2e8f0;
+      }
+
+      .service-table th {
+        background-color: #4361ee;
+        color: white;
+        text-align: left;
+        padding: 12px 15px;
+        text-transform: uppercase;
+        font-size: 13px;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+      }
+
+      /* Add borders to make it more visible in print */
+      .service-table th,
+      .service-table td {
+        border: 1px solid #cbd5e0;
+      }
+
+      .service-table td {
+        background-color: #f7fafc;
+        border: 1px solid #e2e8f0;
+        padding: 12px 15px;
+      }
+
+      .service-table .amount {
+        text-align: right;
+      }
+
+      .service-description {
+        font-size: 12px;
+        color: #4b5563;
+        margin-top: 5px;
+      }
+
+      /* Total Section Styles */
+      .total-section {
+        background-color: #f1f5f9;
+        padding: 15px;
+        text-align: right;
+        margin-left: auto;
+        width: 250px;
+        margin-bottom: 30px;
+        border: 1px solid #e2e8f0;
+      }
+
+      .total-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+      }
+
+      .total-label {
+        font-weight: bold;
+        color: #4361ee;
+      }
+
+      .total-amount {
+        font-size: 18px;
+        font-weight: bold;
+      }
+
+      /* Payment Info Styles */
+      .payment-info {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        padding: 20px;
+        margin-bottom: 30px;
+      }
+
+      /* Footer Styles */
+      .footer {
+        text-align: center;
+        margin-top: 40px;
+        color: #64748b;
+        font-size: 14px;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 20px;
+      }
+
+      .footer p {
+        margin-bottom: 5px;
+      }
+
+      /* Action Buttons */
+      .actions {
+        margin-bottom: 30px;
+        text-align: center;
+      }
+
+      .btn {
+        display: inline-block;
+        background-color: #4361ee;
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 4px;
+        border: none;
+        font-size: 16px;
+        cursor: pointer;
+        margin-right: 10px;
+      }
+
+      .btn:hover {
+        background-color: #3651d4;
+      }
+
+      #loading {
+        text-align: center;
+        padding: 50px;
+      }
+
+      @media print {
+        html,
+        body {
+          height: auto !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: visible !important;
+        }
+        /* Force logo to display in print mode */
+        .logo {
+          display: block !important;
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
+          max-width: 150px !important;
+        }
+
+        /* Force background colors to print */
+        .service-table th {
+          background-color: #4361ee !important;
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
+          color: white !important;
+        }
+
+        body {
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
+        .header {
+          /* background-color: #1e3a8a !important; */ /* Remove or comment this out */
+          border-bottom: 1px solid black !important;
+          position: relative;
+          padding: 30px !important;
+        }
+        .brand-name,
+        .brand-email {
+          color: #2d3748 !important; /* Use the same as screen */
+        }
+
+        .container {
+          margin: 0 !important;
+          padding-block: 0 !important;
+          box-shadow: none !important;
+          max-width: 100% !important;
+          background: white !important;
+          page-break-after: avoid !important;
+        }
+
+        .invoice-content {
+          padding-bottom: 0 !important;
+          margin-bottom: 0 !important;
+          page-break-inside: avoid !important;
+        }
+
+        .footer {
+          margin-top: 20px !important;
+          padding-top: 10px !important;
+          border-top: 1px solid #e2e8f0 !important;
+          page-break-after: avoid !important;
+        }
+
+        /* Prevent page break inside payment info and total */
+        .payment-info,
+        .total-section {
+          page-break-inside: avoid !important;
+        }
+
+        /* Remove extra space after the invoice */
+        #invoice {
+          margin-bottom: 0 !important;
+          padding-bottom: 0 !important;
+        }
+
+        .total-section,
+        .payment-info {
+          border: 1px solid #e2e8f0 !important;
+        }
+
+        /* Ensure text colors are preserved */
+        .section-title,
+        .total-label {
+          color: #4361ee !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Loading indicator -->
+      <div id="loading">Loading invoice data...</div>
+
+      <!-- Invoice content (hidden until loaded) -->
+      <div id="invoice" style="display: none">
+        <!-- Print/Download buttons -->
+        <div class="actions no-print">
+          <button onclick="window.print()" class="btn">
+            Print/Download PDF
+          </button>
+          <!-- <button onclick="window.location.href='/agent/payments'" class="btn" style="background-color: #64748b;">Back to Payments</button> -->
+        </div>
+
+        <!-- Invoice Header -->
+        <div class="header">
+          <div id="logo-container">
+            <!-- Logo will be inserted here by JavaScript -->
+          </div>
+          <div class="brand-details">
+            <div id="brand-name" class="brand-name"></div>
+            <div id="brand-email" class="brand-email"></div>
+          </div>
+        </div>
+
+        <!-- Invoice Content -->
+        <div class="invoice-content">
+          <h1 class="invoice-title">INVOICE</h1>
+
+          <!-- Invoice Details -->
+          <div class="invoice-details">
+            <p>
+              <strong>Invoice Number:</strong> <span id="invoice-number"></span>
+            </p>
+            <p><strong>Date:</strong> <span id="invoice-date"></span></p>
+            <p>
+              <strong>Payment Status:</strong> <span id="payment-status"></span>
+            </p>
+          </div>
+
+          <!-- Bill To Section -->
+          <div class="bill-to">
+            <h3 class="section-title">BILL TO:</h3>
+            <p id="customer-name"></p>
+            <p id="customer-email"></p>
+            <p id="customer-phone"></p>
+          </div>
+
+          <!-- Service Table -->
+          <table class="service-table">
+            <thead>
+              <tr>
+                <th>SERVICE</th>
+                <th class="amount">AMOUNT</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div id="service-name"></div>
+                  <div
+                    id="service-description"
+                    class="service-description"
+                  ></div>
+                </td>
+                <td id="service-amount" class="amount"></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Total Section -->
+          <div class="total-section">
+            <div class="total-row">
+              <span class="total-label">TOTAL:</span>
+              <span id="total-amount" class="total-amount"></span>
+            </div>
+          </div>
+
+          <!-- Payment Information -->
+          <div class="payment-info">
+            <h3 class="section-title">Payment Information:</h3>
+            <p>
+              <strong>Reference ID:</strong> <span id="reference-id"></span>
+            </p>
+            <p><strong>Payment Method:</strong> PayPal</p>
+          </div>
+
+          <!-- Footer -->
+          <div class="footer">
+            <p>Thank you for your business!</p>
+            <p>
+              This invoice was generated on <span id="generation-date"></span>
+            </p>
+            <p>
+              &copy; <span id="current-year"></span>
+              <span id="footer-brand-name"></span>. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Get the reference ID from the URL
+      const pathParts = window.location.pathname.split("/");
+      const referenceId = pathParts[pathParts.length - 1];
+
+      // Function to format date
+      function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+      }
+
+      // Fetch payment data from API
+      async function loadInvoiceData() {
+        try {
+          const response = await fetch(`/api/payments/${referenceId}`);
+
+          if (!response.ok) {
+            throw new Error(`Failed to fetch payment data: ${response.status}`);
+          }
+
+          const { success, data } = await response.json();
+
+          if (!success) {
+            throw new Error("Data fetch unsuccessful");
+          }
+
+          // Populate the invoice with data
+          populateInvoice(data);
+        } catch (error) {
+          console.error("Error loading invoice data:", error);
+          document.getElementById("loading").innerHTML = `
+          <p style="color: red;">Error loading invoice: ${error.message}</p>
+          <button onclick="window.location.reload()" class="btn">Try Again</button>
+        `;
+        }
+      }
+
+      // Populate the invoice with data
+      function populateInvoice(payment) {
+        // Brand details
+        const brand = payment.brand;
+        document.getElementById("brand-name").textContent = brand.name;
+        document.getElementById("brand-email").textContent =
+          brand.email ||
+          `info@${brand.name.toLowerCase().replace(/\s+/g, "")}.com`;
+        document.getElementById("footer-brand-name").textContent = brand.name;
+
+        // Logo handling with text fallback for print
+        const logoContainer = document.getElementById("logo-container");
+        if (brand.logoUrl) {
+          // Add the logo image
+          const logoImg = document.createElement("img");
+          logoImg.src = brand.logoUrl;
+          logoImg.alt = brand.name;
+          logoImg.className = "logo";
+          logoContainer.appendChild(logoImg);
+
+          // Add a fallback text version that only shows when printing
+          // if the logo fails to render
+          const logoPrintFallback = document.createElement("div");
+          logoPrintFallback.innerHTML = `<strong style="font-size: 24px; color: #4361ee !important;">${brand.name}</strong>`;
+          logoPrintFallback.className = "print-only-fallback";
+          logoPrintFallback.style.display = "none";
+          logoContainer.appendChild(logoPrintFallback);
+
+          // Check if logo loaded properly
+          logoImg.onerror = function () {
+            logoPrintFallback.style.display = "block";
+          };
+        }
+
+        // Invoice details
+        const invoiceNumber = `INV-${payment.referenceId
+          .substring(0, 8)
+          .toUpperCase()}`;
+        document.getElementById("invoice-number").textContent = invoiceNumber;
+        document.getElementById("invoice-date").textContent = formatDate(
+          payment.createdAt || new Date()
+        );
+        document.getElementById("payment-status").textContent =
+          payment.status.toUpperCase();
+
+        // Customer details
+        document.getElementById("customer-name").textContent =
+          payment.customerName;
+        document.getElementById("customer-email").textContent =
+          payment.customerEmail;
+        if (payment.customerPhone) {
+          document.getElementById("customer-phone").textContent =
+            payment.customerPhone;
+        } else {
+          document.getElementById("customer-phone").style.display = "none";
+        }
+
+        // Service details
+        document.getElementById("service-name").textContent =
+          payment.serviceName || "General Service";
+        if (payment.serviceDescription) {
+          document.getElementById("service-description").textContent =
+            payment.serviceDescription;
+        } else {
+          document.getElementById("service-description").style.display = "none";
+        }
+
+        // Payment amounts
+        const formattedAmount = `${payment.currency} ${parseFloat(
+          payment.amount
+        ).toFixed(2)}`;
+        document.getElementById("service-amount").textContent = formattedAmount;
+        document.getElementById("total-amount").textContent = formattedAmount;
+
+        // Payment reference
+        document.getElementById("reference-id").textContent =
+          payment.referenceId;
+
+        // Footer details
+        document.getElementById("generation-date").textContent =
+          new Date().toLocaleString();
+        document.getElementById("current-year").textContent =
+          new Date().getFullYear();
+
+        // Show the invoice and hide loading indicator
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("invoice").style.display = "block";
+
+        // Set page title
+        document.title = `Invoice ${invoiceNumber} - ${brand.name}`;
+      }
+
+      // Load the invoice data when the page loads
+      window.addEventListener("DOMContentLoaded", loadInvoiceData);
+    </script>
+  </body>
+</html>

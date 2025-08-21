@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Links - Agent Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .links-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        .page-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .table th {
+            background-color: #f8f9fa;
+        }
+        .badge-pending {
+            background-color: #ffc107;
+        }
+        .badge-completed {
+            background-color: #28a745;
+        }
+        .badge-failed {
+            background-color: #dc3545;
+        }
+        .badge-expired {
+            background-color: #6c757d;
+        }
+        .badge-processing {
+            background-color: #17a2b8;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        .loading-spinner {
+            text-align: center;
+            margin: 40px 0;
+        }
+        .empty-state {
+            text-align: center;
+            margin: 40px 0;
+            color: #6c757d;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+      <div class="container">
+        <a class="navbar-brand" href="/agent/payments">Payment Terminal</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="/agent/payments">Payments</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/agent/create-link">Create Payment</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/agent/brands">Brands</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/agent/contact-requests">Contact Requests</a>
+            </li>
+          </ul>
+          <div class="d-flex">
+            <button onclick="logout()" class="btn btn-outline-light">Logout</button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container">
+        <div class="links-container">
+            <div class="page-header">
+                <h2>Payment Links</h2>
+                <p class="text-muted">View and manage all generated payment links</p>
+                <div class="mt-3">
+                    <a href="/create-link.html" class="btn btn-primary">Create New Payment Link</a>
+                    <button id="refresh-btn" class="btn btn-outline-secondary ms-2">Refresh List</button>
+                </div>
+            </div>
+
+            <div id="loading-spinner" class="loading-spinner">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading payment links...</p>
+            </div>
+
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-inbox" viewBox="0 0 16 16">
+                    <path d="M4.98 4a.5.5 0 0 0-.39.188L1.54 8H6a.5.5 0 0 1 .5.5 1.5 1.5 0 1 0 3 0A.5.5 0 0 1 10 8h4.46l-3.05-3.812A.5.5 0 0 0 11.02 4H4.98zm-1.17-.437A1.5 1.5 0 0 1 4.98 3h6.04a1.5 1.5 0 0 1 1.17.563l3.7 4.625a.5.5 0 0 1 .106.374l-.39 3.124A1.5 1.5 0 0 1 14.117 13H1.883a1.5 1.5 0 0 1-1.489-1.314l-.39-3.124a.5.5 0 0 1 .106-.374l3.7-4.625z"/>
+                </svg>
+                <h5 class="mt-3">No payment links found</h5>
+                <p>Create your first payment link to get started</p>
+                <a href="/create-link.html" class="btn btn-primary">Create Payment Link</a>
+            </div>
+
+            <div id="links-table-container" class="table-responsive" style="display: none;">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Reference ID</th>
+                            <th>Customer</th>
+                            <th>Service</th>
+                            <th>Amount</th>
+                            <th>Brand</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="links-table-body">
+                        <!-- Content will be loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Payment Link Details -->
+    <div class="modal fade" id="linkDetailsModal" tabindex="-1" aria-labelledby="linkDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="linkDetailsModalLabel">Payment Link Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="modal-body-content">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auth helper functions
+        function getToken() {
+          return localStorage.getItem('token');
+        }
+
+        function checkAuth() {
+          const token = getToken();
+          if (!token) {
+            window.location.href = '/login';
+            return false;
+          }
+          return true;
+        }
+
+        // Replace all fetch calls with this helper
+        async function fetchWithAuth(url, options = {}) {
+          if (!checkAuth()) return;
+          
+          const token = getToken();
+          
+          const headers = {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            ...options.headers
+          };
+          
+          return fetch(url, {
+            ...options,
+            headers
+          });
+        }
+
+        // Add logout functionality
+        function logout() {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+        }
+
+        // Global variables
+        let paymentLinks = [];
+        let modal;
+
+        document.addEventListener('DOMContentLoaded', function() {
+          // Check authentication first thing
+          if (!localStorage.getItem('token')) {
+            window.location.href = '/login';
+            return;
+          }
+          
+          // Initialize Bootstrap modal
+          modal = new bootstrap.Modal(document.getElementById('linkDetailsModal'));
+          
+          // Load payment links when page loads
+          loadPaymentLinks();
+          
+          // Refresh button
+          document.getElementById('refresh-btn').addEventListener('click', loadPaymentLinks);
+        });
+        
+        // Load payment links from API
+        async function loadPaymentLinks() {
+          showLoading(true);
+          
+          try {
+            // Make sure we're sending the token
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/payments', {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            if (!response.ok) {
+              throw new Error('Failed to load payment links');
+            }
+            
+            const { data } = await response.json();
+            paymentLinks = data;
+            
+            if (paymentLinks.length === 0) {
+              showEmptyState(true);
+            } else {
+              renderPaymentLinks(paymentLinks);
+              showEmptyState(false);
+            }
+          } catch (error) {
+            console.error('Error loading payment links:', error);
+            alert('Failed to load payment links. Please try again.');
+          } finally {
+            showLoading(false);
+          }
+        }
+        
+        // Render payment links
+        function renderPaymentLinks(links) {
+            const tableBody = document.getElementById('links-table-body');
+            tableBody.innerHTML = '';
+            
+            links.forEach(link => {
+                const row = document.createElement('tr');
+                
+                // Format date
+                const createdDate = new Date(link.createdAt);
+                const formattedDate = createdDate.toLocaleDateString() + ' ' + 
+                                      createdDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                row.innerHTML = `
+                    <td><span class="text-primary">${link.referenceId.substring(0, 8)}...</span></td>
+                    <td>${link.customerName}</td>
+                    <td>${link.serviceName}</td>
+                    <td>${parseFloat(link.amount).toFixed(2)} ${link.currency}</td>
+                    <td>${link.brandName}</td>
+                    <td><span class="badge bg-${getStatusColor(link.status)}">${link.status}</span></td>
+                    <td>${formattedDate}</td>
+                    <td class="action-buttons">
+                        <button class="btn btn-sm btn-outline-primary view-details" data-reference="${link.referenceId}">
+                            Details
+                        </button>
+                        <a href="/pay/${link.referenceId}" target="_blank" class="btn btn-sm btn-outline-success">
+                            Open
+                        </a>
+                        ${link.status === 'completed' ? 
+                          `<a target="__blank" href="/invoice/${link.referenceId}" class="btn btn-sm btn-outline-secondary download-invoice" data-reference="${link.referenceId}">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-pdf" viewBox="0 0 16 16">
+                                <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+                                <path d="M4.603 14.087a.8.8 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.7 7.7 0 0 1 1.482-.645 20 20 0 0 0 1.062-.385c.114-.047.204-.09.285-.126.51.19 1.022.35 1.499.55.223.09.435.199.649.321.173.108.333.235.45.371.075.091.141.185.195.284.131.24.2.527.08.829.04.09.07.18.09.271.113.537-.288.926-.66 1.087-.328.147-.7.14-1.004.056a3.4 3.4 0 0 1-.958-.596 7.3 7.3 0 0 1-.852-.833 11 11 0 0 0-.233-.275 1.05 1.05 0 0 0-.084-.04l-.003.005a1.2 1.2 0 0 0-.035-.037l.08-.036a.5.5 0 0 1-.016-.011c-.046-.02-.094-.038-.14-.055-.044-.02-.09-.039-.135-.057 0 0-.001 0-.002 0-.001 0-.002 0-.002 0a2.97 2.97 0 0 0-.349-.1 3.5 3.5 0 0 0-.452-.054c-.168-.008-.359-.008-.518.04-.16.05-.32.154-.39.307s-.015.345.077.516q.057.089.103.167l.017.024c.273.387.47.875.5 1.351a2 2 0 0 1-.045.85c-.03.12-.074.22-.116.314-.027.058-.056.114-.083.17-.063.126-.122.25-.19.375-.107.21-.219.422-.356.636-.005.006-.01.012-.015.018l-.042.05-.01.013-.018.022a1.8 1.8 0 0 1-.145.16c-.265.288-.487.648-.58 1.067-.05.226-.062.465-.034.696.033.265.11.492.21.694.05.086.103.171.158.252a3 3 0 0 0 .241.3 5.4 5.4 0 0 0 .713.607c.405.31.884.555 1.39.647.51.093 1.031.063 1.505-.07.386-.112.74-.31 1.058-.57.631-.52 1.088-1.261 1.301-2.025.193-.696.236-1.439.168-2.151l-.027-.242a1.27 1.27 0 0 1-.042-.145 2 2 0 0 0-.137-.445 3.07 3.07 0 0 0-.795-1.142 5.6 5.6 0 0 0-.935-.702l-.034-.023a2.6 2.6 0 0 1-.396-.296c-.169-.162-.302-.345-.418-.53a3 3 0 0 1-.24-.664c-.05-.21-.086-.422-.108-.628a6.8 6.8 0 0 1-.026-.851c.004-.2.012-.386.023-.573a6.6 6.6 0 0 1 .062-.618c.02-.148.045-.282.07-.416.025-.123.049-.248.08-.371.285-1.116.876-2.128 1.642-2.853.556-.534 1.196-.905 1.813-.934.282-.014.56.022.786.164z"/>
+                              </svg> Invoice
+                           </a>` : ''}
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            // Add event listeners to buttons
+            document.querySelectorAll('.view-details').forEach(button => {
+                button.addEventListener('click', function() {
+                    const referenceId = this.getAttribute('data-reference');
+                    showPaymentDetails(referenceId);
+                });
+            });
+
+            // Add event listeners to download invoice buttons
+            // document.querySelectorAll('.download-invoice').forEach(button => {
+            //     button.addEventListener('click', function() {
+            //         const referenceId = this.getAttribute('data-reference');
+            //         downloadInvoice(referenceId);
+            //     });
+            // });
+            
+            document.querySelectorAll('.copy-link').forEach(button => {
+                button.addEventListener('click', function() {
+                    const link = this.getAttribute('data-link');
+                    const fullUrl = window.location.origin + link;
+                    navigator.clipboard.writeText(fullUrl).then(() => {
+                        // Change button text temporarily
+                        const originalText = this.textContent;
+                        this.textContent = 'Copied!';
+                        setTimeout(() => {
+                            this.textContent = originalText;
+                        }, 1500);
+                    });
+                });
+            });
+            
+            document.getElementById('links-table-container').style.display = 'block';
+        }
+        
+        // Show payment details in modal
+        function showPaymentDetails(referenceId) {
+            const link = paymentLinks.find(link => link.referenceId === referenceId);
+            
+            if (!link) {
+                return;
+            }
+            
+            const createdDate = new Date(link.createdAt);
+            const formattedDate = createdDate.toLocaleDateString() + ' ' + 
+                                  createdDate.toLocaleTimeString();
+            
+            const modalContent = document.getElementById('modal-body-content');
+            
+            modalContent.innerHTML = `
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6>Reference ID</h6>
+                        <p>${link.referenceId}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Status</h6>
+                        <p><span class="badge bg-${getStatusColor(link.status)}">${link.status}</span></p>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6>Customer Name</h6>
+                        <p>${link.customerName}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Customer Email</h6>
+                        <p>${link.customerEmail}</p>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6>Service</h6>
+                        <p>${link.serviceName}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Brand</h6>
+                        <p>${link.brandName}</p>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6>Amount</h6>
+                        <p>${parseFloat(link.amount).toFixed(2)} ${link.currency}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Created</h6>
+                        <p>${formattedDate}</p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <h6>Payment URL</h6>
+                        <div class="input-group">
+                            <input type="text" class="form-control" value="${window.location.origin}/pay/${link.referenceId}" readonly>
+                            <button class="btn btn-outline-secondary copy-modal-url" type="button">Copy</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add event listener to copy button in modal
+            modalContent.querySelector('.copy-modal-url').addEventListener('click', function() {
+                const urlInput = modalContent.querySelector('input');
+                urlInput.select();
+                document.execCommand('copy');
+                
+                // Change button text temporarily
+                this.textContent = 'Copied!';
+                setTimeout(() => {
+                    this.textContent = 'Copy';
+                }, 1500);
+            });
+            
+            // Show modal
+            modal.show();
+        }
+        
+        // Helper functions
+        function getStatusColor(status) {
+            switch(status) {
+                case 'pending': return 'warning';
+                case 'processing': return 'info';
+                case 'completed': return 'success';
+                case 'failed': return 'danger';
+                case 'expired': 
+                case 'cancelled': 
+                case 'refunded': return 'secondary';
+                default: return 'light';
+            }
+        }
+
+        // Function to download invoice
+        async function downloadInvoice(referenceId) {
+            try {
+                // Show loading or disable button
+                const button = document.querySelector(`.download-invoice[data-reference="${referenceId}"]`);
+                const originalContent = button.innerHTML;
+                button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...';
+                button.disabled = true;
+                
+                // Request the invoice from the API
+                const response = await fetch(`/api/payments/${referenceId}/invoice`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/pdf'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.status} ${response.statusText}`);
+                }
+                
+                // Convert the response to a blob
+                const blob = await response.blob();
+                
+                // Create a URL for the blob
+                const url = window.URL.createObjectURL(blob);
+                
+                // Create a temporary link element to trigger the download
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `invoice-${referenceId}.pdf`;
+                
+                // Add to document, click it, and remove it
+                document.body.appendChild(a);
+                a.click();
+                
+                // Clean up
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+            } catch (error) {
+                console.error('Error downloading invoice:', error);
+                alert('Failed to download the invoice. Please try again later.');
+            } finally {
+                // Restore button state
+                const button = document.querySelector(`.download-invoice[data-reference="${referenceId}"]`);
+                button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-pdf" viewBox="0 0 16 16">
+                    <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+                    <path d="M4.603 14.087a.8.8 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.7 7.7 0 0 1 1.482-.645a20 20 0 0 0 1.062-.385c.114-.047.204-.09.285-.126.51.19 1.022.35 1.499.55.223.09.435.199.649.321.173.108.333.235.45.371.075.091.141.185.195.284.131.24.2.527.08.829.04.09.07.18.09.271.113.537-.288.926-.66 1.087-.328.147-.7.14-1.004.056a3.4 3.4 0 0 1-.958-.596 7.3 7.3 0 0 1-.852-.833 11 11 0 0 0-.233-.275a1.05 1.05 0 0 0-.084-.04l-.003.005a1.2 1.2 0 0 0-.035-.037l.08-.036a.5.5 0 0 1-.016-.011c-.046-.02-.094-.038-.14-.055-.044-.02-.09-.039-.135-.057 0 0-.001 0-.002 0-.001 0-.002 0-.002 0a2.97 2.97 0 0 0-.349-.1a3.5 3.5 0 0 0-.452-.054c-.168-.008-.359-.008-.518.04-.16.05-.32.154-.39.307s-.015.345.077.516q.057.089.103.167l.017.024c.273.387.47.875.5 1.351a2 2 0 0 1-.045.85c-.03.12-.074.22-.116.314-.027.058-.056.114-.083.17-.063.126-.122.25-.19.375-.107.21-.219.422-.356.636-.005.006-.01.012-.015.018l-.042.05-.01.013-.018.022a1.8 1.8 0 0 1-.145.16c-.265.288-.487.648-.58 1.067-.05.226-.062.465-.034.696.033.265.11.492.21.694.05.086.103.171.158.252a3 3 0 0 0 .241.3a5.4 5.4 0 0 0 .713.607c.405.31.884.555 1.39.647.51.093 1.031.063 1.505-.07.386-.112.74-.31 1.058-.57.631-.52 1.088-1.261 1.301-2.025.193-.696.236-1.439.168-2.151l-.027-.242a1.27 1.27 0 0 1-.042-.145a2 2 0 0 0-.137-.445a3.07 3.07 0 0 0-.795-1.142a5.6 5.6 0 0 0-.935-.702l-.034-.023a2.6 2.6 0 0 1-.396-.296c-.169-.162-.302-.345-.418-.53a3 3 0 0 1-.24-.664c-.05-.21-.086-.422-.108-.628a6.8 6.8 0 0 1-.026-.851c.004-.2.012-.386.023-.573a6.6 6.6 0 0 1 .062-.618c.02-.148.045-.282.07-.416.025-.123.049-.248.08-.371.285-1.116.876-2.128 1.642-2.853.556-.534 1.196-.905 1.813-.934.282-.014.56.022.786.164z"/>
+            </svg> Invoice`;
+                button.disabled = false;
+            }
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading-spinner').style.display = show ? 'block' : 'none';
+        }
+        
+        function showEmptyState(show) {
+            document.getElementById('empty-state').style.display = show ? 'block' : 'none';
+            document.getElementById('links-table-container').style.display = show ? 'none' : 'block';
+        }
+    </script>
+</body>
+</html>
