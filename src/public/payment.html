@@ -372,7 +372,7 @@
                 onApprove: async (data, actions) => {
                   // Optionally capture on the client, or redirect to a success page
                   console.log("Payment approved:", data);
-                  window.location.href = `/payment/success/${referenceId}`;
+                  window.location.href = `/payment/success/${referenceId}?token=${data.orderID}&PayerID=${data.payerID}`;
                 },
                 onCancel: () => {
                   // window.location.href = `/payment/cancel/${data.referenceId}`;
