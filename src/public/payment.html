@@ -35,10 +35,14 @@
         padding-inline: 0px;
       }
       .brand-logo {
-        max-height: auto;
+        max-width: 120px;
+        max-height: 60px;
         width: auto;
+        height: auto;
         margin-top: 70px;
         margin-bottom: 55px;
+        object-fit: contain;
+        display: inline-block;
       }
       .payment-header {
         /* border-radius: 8px 8px 0 0; */
@@ -181,12 +185,13 @@
   </head>
   <body>
     <div class="container payment-container">
-      <div class="payment-header text-center">
+      <div class="payment-header text-center max-h-24 max-w-24 overflow-hidden">
         <img
           id="brand-logo"
           class="brand-logo"
           src="/brand-logos/nixxon-publisher.png"
           alt="Brand Logo"
+          class="mb-4"
         />
       </div>
 
